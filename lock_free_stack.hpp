@@ -48,7 +48,7 @@ public:
                                             std::memory_order_relaxed)) 
         { _mm_pause(); }
 
-        result = std::move(old_head->data);
+        result = std::move(old_head->data_);
     }
 
     lf_stack_leak (const lf_stack_leak&) = delete;

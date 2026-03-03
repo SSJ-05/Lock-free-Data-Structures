@@ -11,8 +11,7 @@ template <typename T>
 class lf_stack_leak {
 private:
     struct Node {
-        // T data_;
-        std::shared_ptr<T> data_;
+        T data_;
         Node* next_;
         Node (T const& data) : data_ (std::make_shared<T>(data)) {}
     };
@@ -40,7 +39,7 @@ public:
         { std::this_thread::yield(); }
     }
 
-    std::shared_ptr<T> pop () {
+    void pop (T& result) {
         Node* old_head = head_.load(std::memory_order_relaxed);
         
         while (old_head && 
@@ -49,7 +48,7 @@ public:
                                             std::memory_order_relaxed)) 
         { _mm_pause(); }
 
-        return old_head ? old_head->data_ : std::shared_ptr<T>();
+        result = std::move(old_head->data);
     }
 
     lf_stack_leak (const lf_stack_leak&) = delete;

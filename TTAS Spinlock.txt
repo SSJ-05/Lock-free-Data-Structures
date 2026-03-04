@@ -1,0 +1,52 @@
+# TTAS Spinlock Implementation
+
+High-performance spinlock using Test-and-Test-and-Set (TTAS) pattern, optimized for reducing cache coherence traffic under contention.
+
+
+
+## How It Works
+
+### The Problem: Naive Spinlock Cache Ping-Pong
+```cpp
+// Naive spinlock - BAD
+while (flag.test_and_set(memory_order_acquire)) {
+    _mm_pause();
+}
+```
+
+Every `test_and_set()` is a Read-For-Ownership (RFO) request that:
+1. Invalidates cache line in all other cores
+2. Transfers exclusive ownership (MESI Modified/Exclusive state)
+3. Generates massive cache coherence traffic
+
+**Result:** Cache line ping-pongs between cores thousands of times per microsecond.
+
+### The Solution: TTAS Pattern
+
+**Phase 1 (read-only spin):** Cache line stays in Shared (S) MESI state across all cores. Zero coherence traffic.
+
+**Phase 2 (acquire attempt):** Only when lock appears free do we issue the expensive RFO to acquire it.
+
+**Result:** 2-4x better latency under contention by minimizing cache ping-pong.
+
+
+## When to Use
+
+**Use TTAS spinlock when:**
+- Critical section < 100ns
+- Low to medium contention (2-8 threads)
+- Threads pinned to dedicated cores
+- Predictable access patterns
+
+**Use `std::mutex` when:**
+- Uncontended (futex fast path is faster)
+- Long critical sections (>100ns)
+- High contention (many threads)
+- Unpredictable workloads
+
+## Design Notes
+
+- **Memory ordering:** `acquire` on lock (synchronize with previous unlock), `release` on unlock (publish writes)
+- **Adaptive backoff:** After 100 spin iterations, yields to OS scheduler
+- **`_mm_pause()`:** Reduces power consumption and improves hyper-threading behavior
+

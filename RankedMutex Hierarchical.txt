@@ -1,0 +1,46 @@
+RankedMutex — Hierarchical Deadlock Prevention
+A lightweight, zero-overhead deadlock prevention mechanism for C++ based on strict lock ordering. Instead of detecting deadlocks after they occur, RankedMutex makes them impossible by construction — any attempt to acquire locks out of order aborts the program immediately with a diagnostic message.
+
+Design Philosophy
+The Problem With Deadlocks
+Deadlocks are silent. Two threads waiting on each other produce no crash, no exception, no log — just a program that stops making progress. They're notoriously hard to reproduce, harder to debug, and nearly impossible to detect at runtime without significant overhead. The standard advice — "always acquire locks in the same order" — is correct but relies entirely on developer discipline, which doesn't scale.
+Crash Early, Crash Hard
+RankedMutex takes the position that a lock ordering violation is a programming error, not a runtime condition. The correct response to a programming error is an immediate, loud, unambiguous crash — not an exception that might get swallowed, not a log message that might get missed. std::abort() produces a core dump, preserves the call stack, and makes the violation impossible to ignore. A deadlock discovered in development via an abort is infinitely preferable to one discovered in production via a hang.
+This is the same philosophy behind assert() — if your invariant is violated, stop immediately before the damage propagates.
+Why [[noreturn]]
+hierarchy_violation() is marked [[noreturn]] because it genuinely never returns — it always calls std::abort(). This isn't just documentation. The compiler uses this information to suppress false "control reaches end of function" warnings, skip generating return epilogue code, and reason more accurately about code paths that follow the call. It's correctness information handed to the compiler, not a style choice.
+Why lock() and unlock() Are Private
+Direct locking of a RankedMutex is intentionally prohibited. All locking must go through RankedLockGuard, which guarantees RAII semantics — the mutex is always unlocked when the guard goes out of scope, even if an exception is thrown. Exposing lock()/unlock() publicly would allow callers to lock without a guard, creating the possibility of a locked mutex never being released. The friend class RankedLockGuard declaration is the narrow, explicit exception to this rule — only the guard gets access, nothing else.
+Why mutable std::mutex
+The internal mutex is marked mutable because locking is an implementation detail, not part of the observable state of the object. A const RankedMutex is still logically constant — its rank doesn't change, its behavior doesn't change — but its internal synchronization state must be allowed to change. mutable is precisely the right tool for this: it communicates that this member is infrastructure, not state.
+Why thread_local
+The lock stack tracking which mutexes a thread currently holds is thread_local because lock ownership is inherently per-thread. Each thread has its own independent acquisition history. A global or shared structure would itself require synchronization, defeating the purpose. thread_local gives each thread a private, zero-contention stack at no synchronization cost.
+Why No Copy or Move
+A mutex cannot be meaningfully copied — what would it mean to copy a lock? Which copy owns the current lock state? = delete on copy construction and copy assignment closes this question at compile time. There is no runtime cost, no defensive check, no documentation needed beyond the deletion itself. The compiler enforces it unconditionally.
+
+Lock Ordering Rules
+
+Every RankedMutex is assigned an integer rank at construction
+Each thread tracks its current highest held rank via a thread_local stack
+A thread may only acquire a mutex whose rank is strictly higher than its current highest held rank
+Any violation aborts immediately with a diagnostic to stderr
+Unlocking must follow strict LIFO order — validated by assertion
+
+
+Usage
+cppconst RankedMutex m_config(1);
+const RankedMutex m_runtime(2);
+const RankedMutex m_stats(3);
+
+// correct — ascending order
+void good() {
+    RankedLockGuard g1(m_config);
+    RankedLockGuard g2(m_runtime);
+    RankedLockGuard g3(m_stats);
+}
+
+// wrong — aborts immediately with diagnostic
+void bad() {
+    RankedLockGuard g1(m_stats);
+    RankedLockGuard g2(m_runtime); // rank 2 < current rank 3, abort
+}

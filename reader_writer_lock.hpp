@@ -49,14 +49,14 @@ class RW_lock {
             _writer_cv.wait(lk, [this] { return !_readers && !_writing; } );
 
             --_pending_writers;
-            ++_writers;
+            _writing = true;
         }
         
         // decrement current writers and let pending writers write one by one
         // after all pending writers are done, we notify readers to acquire lock
         void writerunlock () {
             std::unique_lock lk (_m);
-            --_writers;
+            _writing = false;
             if (_pending_writers > 0) _writer_cv.notify_one();
             else _reader_cv.notify_all();
         }

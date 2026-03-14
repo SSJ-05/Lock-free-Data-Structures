@@ -26,9 +26,9 @@ private:
     }
 
 public:
-    spscq () : head_ (new Node), tail_ (head_.load()) {}
+    explicit spscq () : head_ (new Node), tail_ (head_.load()) {}
 
-    ~spscq () {
+    ~spscq () noexcept {
         while (pop());
         delete head_.load();
     }

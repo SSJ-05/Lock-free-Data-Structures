@@ -57,7 +57,7 @@ class RankedLockGuard {
 public:
     explicit RankedLockGuard (const RankedMutex& m) : _m(m) { _m.lock(); }
 
-    ~RankedLockGuard () { _m.unlock(); }
+    ~RankedLockGuard () noexcept { _m.unlock(); }
 
     RankedLockGuard (const RankedLockGuard&) = delete;
     RankedLockGuard& operator=(const RankedLockGuard&) = delete;

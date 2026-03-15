@@ -75,6 +75,7 @@ namespace zerok {
     // joinable and interruptible thread
     // follows RAII mechanism of joining + stop request
     // functionally same as std::thread
+    // compile time check whether F can accpet stop_token with if constexpr + is_invocable_v
     class jthread {
         private:
             std::thread _jt;
@@ -89,8 +90,8 @@ namespace zerok {
 
                 // accept stop_token as first argument
                 if constexpr (std::is_invocable_v<std::decay_t<F>, 
-                                          stop_token, 
-                                          std::decay_t<Args>...>) {
+                                                  stop_token, 
+                                                  std::decay_t<Args>...>) {
                     _jt = std::thread (
                             std::forward<F>(f),
                             st,
@@ -131,13 +132,13 @@ namespace zerok {
                 _jt.join();
             }
 
-            [[nodiscard]] bool joinable () const {
-                return _jt.joinable();
-            }
-
             void request_stop () {
                 if (!_ss.stop_requested())
                     _ss.request_stop();
+            }
+
+            [[nodiscard]] bool joinable () const {
+                return _jt.joinable();
             }
             
     };

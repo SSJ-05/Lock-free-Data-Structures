@@ -118,6 +118,8 @@ namespace zerok {
             jthread (jthread&&) noexcept = default;
             jthread& operator=(jthread&&) noexcept = default;
 
+            // request stop must before join
+            // otherwise deadlock
             ~jthread () noexcept {
                 request_stop();
                 if (joinable()) join();
@@ -142,4 +144,4 @@ namespace zerok {
             }
             
     };
-}
+}  // namespace zerok

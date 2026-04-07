@@ -15,7 +15,7 @@ class Arena {
 private:
     // hot data - accessed on every allocate
     alignas (64) std::size_t offset_ { 0uz };
-    char pad_ [56];
+    std::uint8_t pad_ [56];
     
     // cold data - on separate cache line - avoid false sharing
     std::size_t size_;

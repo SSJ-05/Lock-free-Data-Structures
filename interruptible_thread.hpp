@@ -8,6 +8,7 @@
 #include <type_traits>
 
 namespace zerok {
+
     class stop_token;
     class stop_source;
     class jthread;
@@ -23,11 +24,14 @@ namespace zerok {
 
         public:
             stop_token () noexcept = default;
+            ~stop_token () noexcept = default;
+
             stop_token (const stop_token&) noexcept = default;
             stop_token& operator=(const stop_token&) noexcept = default;
+
             stop_token (stop_token&&) noexcept = default;
             stop_token& operator=(stop_token&&) noexcept = default;
-            ~stop_token () noexcept = default;
+            
 
             // check whether stop is requested
             [[nodiscard]] bool stop_requested () const noexcept {
@@ -50,11 +54,14 @@ namespace zerok {
 
         public:
             stop_source () noexcept = default;
+            ~stop_source () noexcept = default;
+
             stop_source (const stop_token&) noexcept = default;
             stop_source& operator=(const stop_token&) noexcept = default;
+
             stop_source (stop_token&&) noexcept = default;
             stop_source& operator=(stop_token&&) noexcept = default;
-            ~stop_source () noexcept = default;
+            
 
             // ask for cancellation, return previous cancelled state
             [[nodiscard]] bool request_stop () const noexcept {

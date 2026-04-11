@@ -10,7 +10,7 @@
 #include <new>
 #include <type_traits>
 
-#define ARENA_COMPILER_BARRIER() asm volatile("" ::: "memory")
+// #define ARENA_COMPILER_BARRIER() asm volatile("" ::: "memory")
 
 namespace zerok {
 
@@ -89,12 +89,7 @@ public:
         constexpr std::size_t page_size = 2 * 1024 * 1024;   // pre-touch 2MB pages
         volatile std::uint8_t* mem = memory_;
 
-        for (auto i {0uz}; i < size_; i += page_size) {
-            mem[i] = 0; 
-    
-            std::size_t last_byte = i + page_size - 1;
-            if (last_byte < size_) mem[last_byte] = 0;
-        }
+        for (auto i {0uz}; i < size_; i += page_size) mem[i] = 0;
     }
 
     // reset without calling destructor (PREFERRED IN HOT PATH)

@@ -109,7 +109,7 @@ public:
         // prefetch + read
         for (auto i {0uz}; i < size_; i += CL) {
             __builtin_prefetch(memory_ + i + PD, 1, 3);   // prefetch next 8 lines
-            sink ^= memory_[i];                                 // read current line
+            sink ^= memory_[i];                           // read current line
         }
         // ARENA_COMPILER_BARRIER();
         (void) sink;    // prevent optimization

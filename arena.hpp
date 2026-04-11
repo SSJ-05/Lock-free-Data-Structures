@@ -60,7 +60,8 @@ public:
             memory_ = nullptr;
         }
     }
-    // these processes should only happen at system shutdown, never in hot path
+
+
 
     // no exceptions allocation, with default cache line 64 bytes
     [[nodiscard]] void* allocate(std::size_t size, std::size_t alignment = 64) noexcept {
@@ -76,6 +77,8 @@ public:
         return ptr;
     }
 
+
+
     // create order
     template<typename T, typename... Args>
     T* create_order(Args&&... args) noexcept (std::is_nothrow_constructible_v<T, Args...>) {
@@ -84,6 +87,8 @@ public:
         return new (ptr) T(std::forward<Args>(args)...);
     }
 
+
+
     // pre-touch pages
     void touch_all_pages() noexcept {
         constexpr std::size_t page_size = 2 * 1024 * 1024;   // pre-touch 2MB pages
@@ -91,6 +96,26 @@ public:
 
         for (auto i {0uz}; i < size_; i += page_size) mem[i] = 0;
     }
+
+
+
+    // warm cache before hot path
+    // L1 residency
+    void warm_cache() noexcept {
+        constexpr std::size_t CL { 64 };     // 64 stride Cache Line
+        constexpr std::size_t PD { CL * 8 }; // Prefetch Distance
+        volatile std::uint8_t sink { 0 };    // prevent compiler from optimizing
+
+        // prefetch + read
+        for (auto i {0uz}; i < size_; i += CL) {
+            __builtin_prefetch(memory_ + i + PD, 1, 3);   // prefetch next 8 lines
+            sink ^= memory_[i];                                 // read current line
+        }
+        // ARENA_COMPILER_BARRIER();
+        (void) sink;    // prevent optimization
+    }
+
+
 
     // reset without calling destructor (PREFERRED IN HOT PATH)
     void reset() noexcept { offset_ = 0; }

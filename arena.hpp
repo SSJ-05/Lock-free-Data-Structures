@@ -133,6 +133,7 @@ public:
 };
 
 } // namespace zerok
+
 // first run this in CLI to preallocate '20' hugepages: sudo sh -c 'echo 20 > /proc/sys/vm/nr_hugepages'
 // or echo 20 | sudo tee /proc/sys/vm/nr_hugepages
 // for reset use : echo 0 | sudo tee /proc/sys/vm/nr_hugepages

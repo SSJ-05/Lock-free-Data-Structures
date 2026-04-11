@@ -10,6 +10,8 @@
 #include <new>
 #include <type_traits>
 
+#define ARENA_COMPILER_BARRIER() asm volatile("" ::: "memory")
+
 namespace zerok {
 
 class Arena {

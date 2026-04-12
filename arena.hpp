@@ -95,7 +95,6 @@ public:
         volatile std::uint8_t* mem = memory_;
 
         for (auto i {0uz}; i < size_; i += page_size) mem[i] = 0;
-        (void) *mem;
     }
 
 

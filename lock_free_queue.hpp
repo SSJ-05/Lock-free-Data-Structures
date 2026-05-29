@@ -22,14 +22,14 @@ private:
 
     // Node - linked list
     struct Node {
-        T data_
+        T data_;
         Node* next_ { nullptr };
     };
 
 
     // Queue internals
-    std::atomic<Node*> head_;
-    std::atomic<Node*> tail_;
+    alignas(64) std::atomic<Node*> head_;
+    alignas(64) std::atomic<Node*> tail_;
 
     Node* pop_head () {
         Node* const old_head = head_.load(std::memory_order_relaxed);

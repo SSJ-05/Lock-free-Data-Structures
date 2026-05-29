@@ -46,12 +46,13 @@ private:
     }
 
 
+
+    alignas(64) Node* producer_free_list_         { nullptr };             // ptr used by producer 
+    alignas(64) Node* consumer_free_list_         { nullptr };             // ptr used by consumer
+    alignas(64) std::atomic<Node*> returned_list_ { nullptr };             // atomic ptr for bulk returns to producer 
+ 
     // Custom memory pool - yeah!
     alignas(Node) std::uint8_t pool_storage_ [Capacity * sizeof(Node)];     // fixed storage + alignment
-
-    Node* producer_free_list_ { nullptr };             // ptr used by producer 
-    Node* consumer_free_list_ { nullptr };             // ptr used by consumer
-    std::atomic<Node*> returned_list_ { nullptr };     // atomic ptr for bulk returns to producer                                
 
     // called by producer only
     Node* pool_acquire() {

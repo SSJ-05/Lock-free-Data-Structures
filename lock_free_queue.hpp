@@ -3,7 +3,12 @@
  * 1. data_ is no longer accessed thru shared_ptr
  * 2. deployed custom memory pool 
  * replaced shared_ptr with std::optional in pop() 
-                
+
+** update : 29.05.26
+* head and tail ptr now cache aligned
+* fixed dtor to drain returned_list_
+* push returns bool to indicate data was dropped off
+* separated pool_storage_ from hot ptrs (head and tail)
 */
 
 

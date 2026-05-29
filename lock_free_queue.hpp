@@ -127,15 +127,20 @@ public:
     }
 
     // called by producer thread only
-    void push (T val) {
+    // return false when pool is full
+    [[nodiscard]]
+    bool push (T val) {
         Node* p = pool_acquire();     // dummy node
-        if (!p) return;               // if pool full, return
+        if (!p) return false;         // if pool full, return false
+        
         p->data_ = std::move(val);
         p->next_ = nullptr;
 
         Node* const old_tail = tail_.load(std::memory_order_relaxed);
         old_tail->next_ = p;
         tail_.store(p, std::memory_order_release);
+
+        return true;
     }
 
 };

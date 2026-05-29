@@ -105,10 +105,27 @@ public:
         tail_.store(dummy, std::memory_order_relaxed);
     }
 
+    
     ~spscq () noexcept {
+        // 1. drain all the active nodes in queue
         while (pop());
-        pool_release(head_.load());     // release the dummy node
+
+        // 2. drain returned_list
+        Node* ret = returned_list_.exchange(nullptr, std::memory_order_acquire);
+        while (ret) {
+            Node* next          =   ret->next_;
+            ret->next_          =   producer_free_list_;
+            producer_free_list  =   ret;
+            ret                 =   next;
+        }
+
+        // 3. release the dummy node
+        Node* dummy         =   head_.load(std::memory_order_relaxed);
+        dummy->next         =   producer_free_list_;
+        producer_free_list_ =   dummy;
     }
+
+
 
     spscq (const spscq&) noexcept = delete;
     spscq& operator=(const spscq&) noexcept = delete;

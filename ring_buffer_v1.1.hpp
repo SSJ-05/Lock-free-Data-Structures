@@ -22,6 +22,7 @@
  * if n & (n-1) == 0, n is a power of 2
  * */
 
+#pragma once
 
 #include <cstdint>
 #include <cstdlib>
@@ -39,7 +40,6 @@ private:
     static constexpr std::size_t MASK_  { Capacity - 1 };
 
     alignas(64) T     buffer_ [Capacity];      // T = trivial POD types
-    char pad0_ [64 - sizeof(std::size_t)];      // padding to place next item on different cache line
 
     alignas(64) std::size_t    head_   {};
     char pad1_ [64 - sizeof(std::size_t)];      
@@ -64,7 +64,7 @@ public:
     // operations : push, pop, peek, reset
     // push
     [[ nodiscard ]]
-    inline bool push (const T& value) noexcept {
+    bool push (const T& value) noexcept {
         if (full ()) return false;
 
         buffer_[head_ & MASK_] = value;
@@ -74,7 +74,7 @@ public:
 
     // pop
     [[ nodiscard ]]
-    inline bool pop (T& value) noexcept {
+    bool pop (T& value) noexcept {
         if (empty ()) return false;
 
         value = buffer_[tail_ & MASK_];
@@ -86,7 +86,7 @@ public:
     
     // peek at elements
     [[ nodiscard ]]
-    inline bool peek (T& value) const noexcept {
+    bool peek (T& value) const noexcept {
         if (empty ()) return false;
         
         value = buffer_ [tail_ & MASK_];
@@ -94,7 +94,7 @@ public:
     }
 
     // reset
-    inline void reset () noexcept {
+    void reset () noexcept {
         head_ = 0;
         tail_ = 0;
     }
@@ -102,15 +102,15 @@ public:
 
 
     // zero copy access for performance
-    T* tail_ptr () const noexcept { return buffer_ + (tail_ & MASK_); }
+    T* get_tail () const noexcept { return buffer_ + (tail_ & MASK_); }
     void advance_tail (std::size_t n) noexcept { tail_ += n; }
 
 
 
     // status checks - full, empty, size, capacity
-    [[ nodiscard ]] inline bool full ()  const noexcept { return (head_ - tail_) >= Capacity; }
-    [[ nodiscard ]] inline bool empty () const noexcept { return (head_ == tail_); }
-    [[ nodiscard ]] inline std::size_t size () const noexcept { return head_ - tail_; }
+    [[ nodiscard ]] bool full ()  const noexcept { return (head_ - tail_) >= Capacity; }
+    [[ nodiscard ]] bool empty () const noexcept { return (head_ == tail_); }
+    [[ nodiscard ]] std::size_t size () const noexcept { return head_ - tail_; }
     [[ nodiscard ]] constexpr std::size_t capacity () const noexcept { return Capacity; }
 
 };
